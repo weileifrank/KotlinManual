@@ -1564,3 +1564,802 @@ class Person {
       }
   }
   ```
+
+- 属性代理
+
+  ```
+  fun main(args: Array<String>) {
+      val bigHeadSon = BigHeadSon()
+      //爷爷奶奶给了100块钱
+      bigHeadSon.ysMoney = 150
+      //取压岁钱
+  //    println(bigHeadSon.ysMoney)
+  }
+  class BigHeadSon {
+      var ysMoney: Int by Mother()
+  }
+  class Mother {
+      var sonMoney = 0
+      var selfMoney = 0
+      operator fun getValue(bigHeadSon: BigHeadSon, property: KProperty<*>): Int {
+          return sonMoney
+      }
+      operator fun setValue(bigHeadSon: BigHeadSon, property: KProperty<*>, i: Int) {
+          sonMoney += 50
+          selfMoney += i - 50
+          println("selfMoney=$selfMoney")
+      }
+  }
+  ```
+
+
+### 惰性加载
+
+> * 字段:val  不可变
+>  * by lazy放到成员变量中 可以单独存在
+>  * by lazy返回值就是最后一行
+>  * by lazy线程安全 (同步)
+
+```
+fun main(args: Array<String>) {
+    val p = Person()
+    println(p.name1)
+    println(name1)
+    println(name1)
+}
+val name1: String  by lazy {
+    println("初始化了")
+    "张三"
+}
+val age = 20
+
+class Person{
+    //用的时候再赋值
+    val name1:String  by lazy { "张三"
+        "aa"}
+    val name2:String = "张三"
+    val name3:String = "张三"
+    val name4:String = "张三"
+}
+```
+
+
+
+### 延迟加载
+
+> * lateinit:延迟加载  用的时候再赋值  不赋值不能用  程序错误处理
+> * 1.by lazy 和lateinit  都可以单独使用或者放到成员变量中使用
+> * 2.by lazy 知道具体值   用的时候再加载
+> * 3.lateinit  不知道具体值  后面再赋值
+> * 4.by lazy变量必须通过val修饰  lateinit需要通过var修饰
+
+```
+lateinit var name1: String
+fun main(args: Array<String>) {
+    name1 = "haha"
+    println(name1)
+}
+```
+
+
+
+### 拓展函数
+
+> ```
+> 扩展函数可以访问当前对象里面的字段和方法
+> ```
+
+```
+fun main(args: Array<String>) {
+    val str:String? = null
+    //str是否为空
+    val myIsEmpty = str.myIsEmpty()
+    println(myIsEmpty)
+    val son = Son()
+    son.sayHello()
+}
+fun String?.myIsEmpty():Boolean{
+    return this==null||this.length==0
+}
+//扩展方法
+fun Father.sayHello(){
+    println("爸爸打招呼了")
+}
+open class Father{
+    fun haha(){
+    }
+}
+class Son:Father(){
+}
+```
+
+
+
+### 伴生对象
+
+- 单例
+
+  > * object单例  所有的字段都是static静态  方法不是
+  >  * object试用条件:字段不多的时候
+  >  * java可以控制字段是静态还是非静态 static,kotlin没有static关键字
+  >  * 看不懂的可以在idea中show kotlin bytecode,然后decompile查看java代码对比
+
+  ```
+  fun main(args: Array<String>) {
+      //单例调用方法和属性的方式
+      println(Utils.name)
+      Utils.sayHello()
+  }
+  //设置成一个单例
+  object Utils{
+      var name = "张三"
+      fun sayHello(){
+          println("hello")
+      }
+  }
+  ```
+
+- 伴生对象
+
+  > 伴生对象作用就是控制属性的静态
+
+  ```
+  fun main(args: Array<String>) {
+      //访问age
+      val person = Person()
+      println(person.age)
+      //name访问
+      println(Person.name)
+  }
+  class Person {
+      var age = 20
+      companion object {
+          //静态的name
+          var name = "张三"
+      }
+  }
+  ```
+
+- 和java一样的单例
+
+  > 搞不懂可以show kotlin bytecode,然后decompile
+
+  ```
+  fun main(args: Array<String>) {
+      println(Utils.instan.age)
+  //    val utils = Utils()
+  }
+  
+  class Utils private constructor() {
+      //第一步:私有构造函数
+  //非静态的
+      var age = 20
+  
+      companion object {
+          //静态
+          var name = "张三"
+          //instance代表Utils的对象实例
+          val instan by lazy { Utils() }//惰性加载  只会加载一次  线程安全
+      }
+  }
+  ```
+
+
+### 枚举
+
+- 基本定义
+
+  ```
+  fun main(args: Array<String>) {
+      //星期一
+      println(WEEK.星期一)
+      println(WEEK.星期二)
+      //所有的元素全部找到
+      val result = WEEK.values()
+      result.forEach { println(it) }
+      //when switch
+      println(todo(WEEK.星期四))
+      println(todo(WEEK.星期日))
+  }
+  
+  fun todo(week: WEEK) {
+      when (week) {
+          in WEEK.星期一..WEEK.星期五 -> println("上班")
+          WEEK.星期六, WEEK.星期日 -> println("休息")
+      }
+  }
+  
+  //一周枚举
+  enum class WEEK { //数据
+      星期一, 星期二, 星期三, 星期四, 星期五, 星期六, 星期日
+  }
+  ```
+
+- 枚举加强
+
+  > 枚举里面可以定义构造函数
+
+  ```
+  fun main(args: Array<String>) {
+      COLOR.RED.r
+      COLOR.RED.g
+      COLOR.RED.b
+  }
+  //枚举三元素
+  // 红  r 255 g 0 b 0
+  // 蓝  r 0 g 0 b 255
+  // 绿  r 0 g 255 b 0
+  enum class COLOR(var r:Int,var g:Int,var b:Int){
+      RED(255,0,0),BLUE(0,0,255),GREEN(0,255,0)
+  }
+  ```
+
+
+### 数据类
+
+```
+fun main(args: Array<String>) {
+    val news = News("标题","简介","路径","内容")
+    println(news.title)
+    println(news.desc)
+
+    println(news.component1())//第一个元素
+    println(news.component2())//第二个元素
+
+    //解构
+    val (title,desc,imgPath,content) = News("标题","简介","路径","内容")
+    println(title)
+    println(desc)
+}
+
+/**
+ * 构造函数
+ * get set
+ * toString
+ * hashcode
+ * equeals
+ * 参数
+ * copy
+ */
+//数据类型
+data class News(var title:String,var desc:String,var imgPath:String,var content:String)
+```
+
+### 解构
+
+```
+fun main(args: Array<String>) {
+    //解构
+    val (title,desc,imgPath,content) = News("标题","简介","路径","内容")
+    println(title)
+    println(desc)
+    val (title1,desc1,imgPath1,content1) = News("标题","简介","路径","内容")
+    println(title1)
+    println(desc1)
+    println(imgPath1)
+    println(content1)
+}
+
+/**
+ * 构造函数
+ * get set
+ * toString
+ * hashcode
+ * equeals
+ * 参数
+ * copy
+ */
+//数据类型
+data class News(var title:String,var desc:String,var imgPath:String,var content:String)
+```
+
+### 密封类
+
+```
+fun main(args: Array<String>) {
+    val startk1 = JonSnow3()
+    val h1 = hasRight(startk1)
+    println(h1)
+}
+
+/**
+ * 判断有没有继承权
+ * 先把所有有继承权的(数量固定) 放在一起  其他都不用管了
+ */
+fun hasRight(startk:NedStark):Boolean{
+    return when(startk){
+        is NedStark.AryaStark->true
+        is NedStark.SansaStark->true
+        is NedStark.RobStark->true
+        is NedStark.BrandonStark->true
+        else->false
+    }
+}
+
+//斯塔克
+sealed class NedStark{//密封类封装的是类型 类型是确定的
+    class RobStark : NedStark()
+    class SansaStark : NedStark()
+    class AryaStark : NedStark()
+    class BrandonStark : NedStark()
+}
+
+class JonSnow : NedStark()
+class JonSnow2 : NedStark()
+class JonSnow3 : NedStark()
+class JonSnow4 : NedStark()
+```
+
+## 集合框架和lambda表达式
+
+### List
+
+- 基本使用
+
+  ```
+  fun main(args: Array<String>) {
+      /*---------------------------- listof ----------------------------*/
+      //林青霞  高圆圆 范冰冰
+      val list1 = listOf("林青霞","高圆圆","林志玲")
+      //不能添加元素
+      //不能修改元素
+      //只读List集合
+  //    list1[0] = "柳岩"
+  //    list1.add()
+      list1.forEach {
+          println(it)
+      }
+      /*---------------------------- mutableListOf ----------------------------*/
+      //返回的也是ArrayList集合
+      val list2 = mutableListOf("林青霞","高圆圆","林志玲")
+      //修改第一个元素
+      list2.set(0,"柳岩")
+      //添加元素
+      list2.add(1,"刘诗诗")
+      println(list2)
+  
+      /*---------------------------- java的集合 ----------------------------*/
+      val list3 = arrayListOf("林青霞","","")
+      list3[2]= "liuyan"
+      list3.add("abc")
+      println("list3=$list3")
+      val list4 = ArrayList<String>()
+      list4.add("abc")
+      println("list4=$list4")
+  }
+  
+  ```
+
+- 集合遍历
+
+  ```
+  fun main(args: Array<String>) {
+      val list1 = mutableListOf("林青霞","高圆圆","林志玲")
+      list1.forEach {
+          println(it)
+      }
+  }
+  
+  ```
+
+
+### Set
+
+- 基本使用
+
+  ```
+  fun main(args: Array<String>) {
+      //set集合 不能存放重复的元素
+      //林青霞  高圆圆  柳岩  高圆圆
+      /*---------------------------- setof ----------------------------*/
+      val set1 = setOf("林青霞","高圆圆","柳岩","高圆圆")
+      //修改
+  //    set1.
+      //添加
+  //    println(set1)
+      /*---------------------------- 可写可修改   ----------------------------*/
+      //Treeset元素需要实现Comparable比较接口
+      val set2 = mutableSetOf("林青霞","高圆圆","柳岩","高圆圆")
+      //添加
+      set2.add("刘诗诗")
+  
+      //修改
+  //    set2.
+      println(set2)
+      /*---------------------------- java的set集合 ----------------------------*/
+  //    hashSetOf<>()
+  //    val treeSet = TreeSet<String>()
+  //    treeSet.add("z")
+  //    treeSet.add("f")
+  //    treeSet.add("e")
+  //    treeSet.add("a")
+  //
+  //    println(treeSet)
+  
+  //    val treeSet2 = TreeSet<Person>()
+  //    treeSet2.add(Person("林青霞",20))
+  //    treeSet2.add(Person("张曼玉",30))
+  //    treeSet2.add(Person("张三",60))
+  //    println(treeSet2)
+  }
+  //class Person(var name:String,var age:Int)
+  ```
+
+- set的遍历
+
+  > 跟上面list类似
+
+### Map
+
+- 基本使用
+
+  ```
+  fun main(args: Array<String>) {
+      /*---------------------------- 不可变 ----------------------------*/
+      val map = mapOf("中国" to "China","英国" to "England","美国" to "USA")
+      /*---------------------------- 可变的map ----------------------------*/
+  //    mutableMapOf()
+      /*---------------------------- java的集合 ----------------------------*/
+  //    hashMapOf("" to "")
+      val hashTable  =  Hashtable<String,String>()
+  
+  }
+  ```
+
+- map的遍历
+
+  ```
+  fun main(args: Array<String>) {
+      val map = mapOf("中国" to "China","英国" to "England","美国" to "USA")
+      //遍历map集合
+      /*---------------------------- 遍历所有的key ----------------------------*/
+      val keySet = map.keys
+  //    keySet.forEach { println(it) }
+      /*---------------------------- 遍历所有的value ----------------------------*/
+      val values = map.values
+  //    values.forEach { println(it) }
+      /*---------------------------- key和value ----------------------------*/
+  //    val entrys = map.entries
+      map.forEach { t, u ->
+          println("key=$t value=$u")
+      }
+      for ((key,value) in map) {
+          println("key=$key value=$value")
+      }
+  }
+  ```
+
+
+### 闭包
+
+```
+fun main(args: Array<String>) {
+    val result = test()
+    result()
+    result()
+    result()
+}
+//闭包 lambda表达式 函数式编程 函数可以作为方法的返回值 方法可以作为函数的参数
+//函数不保存状态  闭包可以让函数携带状态
+fun test():()->Unit{
+    var a  =10
+    return {
+        println(a)
+        a++
+    }
+}
+```
+
+### 高阶函数
+
+```
+fun main(args: Array<String>) {
+    val a = 10
+    val b = 20
+    //调用cacl函数传递需要的工具 返回对应的值
+    //第三个参数应该是函数的引用
+    val sum = calc(a,b,::add)
+    val subResult = calc(a,b,::sub)
+    println("sum=$sum")
+    println("subResult=$subResult")
+}
+
+/**
+ * a:传递的第一个数据
+ * b:传递的第二个数据
+ * block:传递的工具  add  sub
+ * 返回值:使用工具求出的值
+ */
+//第三个参数是函数类型 说明kotlin里面的函数可以传递函数参数  如果函数里面传递函数参数的话 就称为高阶函数
+fun calc(a:Int,b:Int,block:(Int,Int)->Int)=block(a,b)
+//求两个数的和
+fun add(a:Int,b:Int) = a+b
+//求两个数的差
+fun sub(a:Int,b:Int) = a-b
+```
+
+
+
+### lambda
+
+- 基本使用
+
+  ```
+  fun main(args: Array<String>) {
+      val a = 30
+      val b = 20
+      //只能我用这个工具  不能让其他人用
+      //函数的参数定义出来之后 可以自动推断出类型  返回值不需要写 推断出当前的返回值类型
+      //匿名函数 lambda表达式
+      val sum = calc(a, b, { m, n ->
+          m + n
+      })
+      val sum2 = calc(a, b, { m: Int, n: Int ->
+          m + n + 10
+      })
+      var sum3 = calc(a, b) { x, y -> x + y + 30 }
+      println("sum=$sum")
+      println("sum2=$sum2")
+      println("sum3=$sum3")
+  }
+  
+  /**
+   * a:传递的第一个数据
+   * b:传递的第二个数据
+   * block:传递的工具  add  sub
+   * 返回值:使用工具求出的值
+   */
+  //第三个参数是函数类型 说明kotlin里面的函数可以传递函数参数  如果函数里面传递函数参数的话 就称为高阶函数
+  fun calc(a: Int, b: Int, block: (Int, Int) -> Int) = block(a, b)
+  ```
+
+- lambda表达式单纯存在
+
+  ```
+  fun main(args: Array<String>) {
+      //嵌套匿名函数
+      //和sayHello一样功能的函数
+  //    {
+  //        println("hello")
+  //    }()
+      {
+          println("hello")
+      }?.invoke()
+      //不能通过名称来调用
+  
+      //有名函数
+      fun sayHello(){
+          println("hello")
+      }
+      sayHello()
+  }
+  ```
+
+- 有参数的lambda表达式
+
+  ```
+  fun main(args: Array<String>) {
+      //嵌套有参的lambda表达式  实现a+b的和
+      var result = {a:Int,b:Int->a+b}?.invoke(10,20)
+      println(result)
+  }
+  ```
+
+- 保存lambda表达式
+
+  ```
+  fun main(args: Array<String>) {
+      //foreach it
+      //保存lambda表达式
+      var block:(()->Unit)? = null //可空的函数变量类型
+  //            {
+  //                println("hello")
+  //            }
+      //调用lambda表达式
+  //    block()
+      val result = block?.invoke()?:-1
+      println(result)
+      block = test
+      block.invoke()
+  //    test()
+  }
+  val test = {
+      println("hello")
+  }
+  ```
+
+- lambda中的it
+
+  ```
+  fun main(args: Array<String>) {
+  	//高阶函数最后一个参数是函数的,可以把小括号前移
+  	//如果该函数只有一个参数,可以省略,默认it代替
+      var result = myPrint(10) {
+          it + 20
+          100
+      }
+      println(result)
+  }
+  
+  //高阶函数
+  fun myPrint(m: Int, block: (Int) -> Int): Int {
+      val result = block(m)
+      return result
+  }
+  ```
+
+- 常见lambda表达式
+
+  ```
+  fun main(args: Array<String>) {
+      /**
+       * foreach是一个扩展函数
+       * foreach参数是一个函数
+       *
+       */
+      //foreach
+      val str = "frank"
+      str.forEach(::println)
+   
+      str.forEach({char->
+          println(char)
+      })
+      //lambda表达式在最后一位  可以括号前移 迁移之后()没有参数 可以省略
+      //lambda只有一个参数 只有一个参数可以使用it
+      str.forEach{
+          println(it)
+      }
+  
+      /*---------------------------- indexof ----------------------------*/
+      /**
+       * indexOfFirst 是Array类的扩展函数
+       * indexOfFirst参数是函数类型  函数参数类型时数组每一个元素的类型  函数的返回值是boolean类型
+       */
+      val array = arrayOf("林青霞","张曼玉")
+      val index = array.indexOfFirst{
+          it.startsWith("林")
+      }
+  
+  }
+  fun myPrint(char:Char){
+      println(char)
+  }
+  ```
+
+
+### 聚合函数
+
+- 过滤
+
+  ```
+  val list = listOf(
+      Girl("依儿", 18, 168, "山东"),
+      Girl("笑笑", 19, 175, "河南"),
+      Girl("小百合", 17, 155, "福建"),
+      Girl("喵喵", 27, 164, "河南"),
+      Girl("安琦", 19, 159, "河北"),
+      Girl("叶子", 20, 160, "广东")
+  )
+  
+  fun main(args: Array<String>) {
+      /*---------------------------- 俺是河南里,俺只找河南的妹子 ----------------------------*/
+      /**
+       * filter参数是函数类型
+       * filter的predicate函数的参数 是Girl类型
+       * predicate 返回值 boolean
+       * filter函数返回值 List集合
+       */
+      val filter = list.filter { it.place == "河南" }
+      println(filter)
+  }
+  
+  data class Girl(var name: String, var age: Int, var height: Int, var place: String)
+  ```
+
+  ```
+  fun main(args: Array<String>) {
+      val list = listOf("张三", "李四", "王五","张思", "赵六", "张四", "李五", "李六")
+      val list2 = listOf("周芷若", "张无忌", "张五", "李善长", "林青霞", "李寻欢")
+  
+  //    找到第一个姓张的
+      var find = list.find { it.startsWith("张") }
+      println(find)
+  //    把第一个集合中所有姓张的找出来
+      var filter = list.filter { it.startsWith("张") }
+      println(filter)
+  //    把两个集合中所有姓张的找到并存放在同一个集合中
+      var mutableList = mutableListOf<String>()
+      list.filterTo(mutableList){it.startsWith("张")}
+      list2.filterTo(mutableList){it.startsWith("张")}
+      println(mutableList)
+  
+  //    把第一个集合中角标为偶数的元素找出来
+      var filterIndexed = list.filterIndexed { index, s -> index % 2 == 0 }
+      println(filterIndexed)
+  }
+  
+  ```
+
+- 排序
+
+  ```
+  fun main(args: Array<String>) {
+      val list = listOf("z","b","d")
+  //    正序排序  b d z
+      println(list.sorted())
+  //    倒序排序
+      println(list.sortedDescending())
+      val list1 = listOf(Person("林青霞",50),Person("张曼玉",30),Person("柳岩",70))
+      println(list1.sortedBy { it.age })
+      println(list1.sortedByDescending { it.age })
+  }
+  data class Person(var name:String,var age:Int)
+  ```
+
+- 分组
+
+  ```
+  fun main(args: Array<String>) {
+      val list = listOf("张三", "李四", "王五", "赵六", "张四", "李五", "李六")
+      //姓张的一组 姓李的一组 其他一组
+      var groupBy = list.groupBy {
+          var substring = it.substring(0,1)
+          when (substring) {
+              "张" -> "张"
+              "李" -> "李"
+              else -> "其他"
+          }
+      }
+      println(groupBy)
+  }
+  ```
+
+- 最值
+
+  ```
+  fun main(args: Array<String>) {
+      val  list = listOf("z","g","r")
+  //    最大值
+      println(list.max())
+  //    最小值
+      println(list.min())
+  
+      val list1 = listOf(Person("林青霞",50),Person("张曼玉",30),Person("柳岩",70))
+  //    对象最大值
+  //    list1.maxBy { it.age }
+      println(list1.maxBy { it.age })
+  //    对象最小值
+      println(list1.minBy { it.age })
+  }
+  data class Person(var name:String,var age:Int)
+  ```
+
+- 去重复
+
+  ```
+  fun main(args: Array<String>) {
+      val list = listOf("张三","李四","王五","赵六","张四","李五","张三","李六")
+  //    把重复的张三去掉
+      var toSet = list.toSet()
+      println(toSet)
+      //list集合
+      println(list.distinct())
+  //    把重复的同姓的去掉
+      println(list.distinctBy {
+          //张  李  往  找
+          it.substring(0, 1)
+      })
+  }
+  ```
+
+- 集合拆分
+
+  ```
+  fun main(args: Array<String>) {
+      val list = listOf("张三","李四","王五","赵六","张四","李五","张三","李六")
+      //姓张的一部分,另外的一部分
+      var partition = list.partition { it.startsWith("张") }
+      println(partition.first)
+      println(partition.second)
+  }
+  ```
