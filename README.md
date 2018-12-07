@@ -1311,6 +1311,82 @@ class Girl {
   }
   ```
 
+### 面向对象补充
+
+- 匿名内部类中的各种写法
+
+  ```
+  fun main(args: Array<String>) {
+      val p = object : Person() {
+          override fun greeting(): String {
+              return "你好"
+          }
+          override fun eat(s: String) {
+          }
+      }
+      p.eat("cake")
+      val greeting = p.greeting()
+      println(greeting)
+  }
+  
+  abstract class Person {
+      abstract fun greeting(): String
+      abstract fun eat(s: String)
+  }
+  ```
+
+- android中相关的示例代码
+
+  ```
+  class MainActivity : AppCompatActivity() {
+  
+      override fun onCreate(savedInstanceState: Bundle?) {
+          super.onCreate(savedInstanceState)
+          setContentView(R.layout.activity_main)
+          var button = findViewById<Button>(R.id.bt)
+          var lv = findViewById<ListView>(R.id.lv)
+          button.setOnClickListener {
+              Toast.makeText(this, "点击的类型${it.javaClass.name}", Toast.LENGTH_SHORT).show()
+          }
+          //OnLongClickListener是接口不需要,不能在后面加(),加上变成构造方法了
+          button.setOnLongClickListener(object :View.OnLongClickListener {
+              override fun onLongClick(v: View?): Boolean {
+                  return false
+              }
+          })
+          //省略object的匿名内部类写法
+          button.setOnLongClickListener(View.OnLongClickListener {
+              false
+          })
+          //setOnLongClickListener可以接受java8的lambda表达式,然后通过kotlin省略括号得到如下
+          button.setOnLongClickListener{
+              false
+          }
+  
+          var baseAdapter = object:BaseAdapter(){
+              override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
+                  return Button(parent?.context)
+              }
+  
+              override fun getItem(position: Int): Any {
+                  return ""
+              }
+  
+              override fun getItemId(position: Int): Long {
+                  return 0
+              }
+  
+              override fun getCount(): Int {
+                 return 0
+              }
+          }
+  
+      }
+  }
+  
+  
+  ```
+
 
 ### 泛型
 
@@ -2084,6 +2160,11 @@ fun sub(a:Int,b:Int) = a-b
 
 - 基本使用
 
+  >- lambda表达式有返回值的最后一行是返回值
+  >- 没有返回值的,lambda表达式可以自由书写
+
+  ![](imgs/1.png)
+
   ```
   fun main(args: Array<String>) {
       val a = 30
@@ -2363,3 +2444,110 @@ fun sub(a:Int,b:Int) = a-b
       println(partition.second)
   }
   ```
+
+- 集合重新组合
+
+  ```
+  fun main(args: Array<String>) {
+      val list1 = listOf(Person("林青霞",50),Person("张曼玉",30),Person("柳岩",70))
+      //将Person里面每一个name获取
+      val list2 = list1.map {
+          it.name.substring(0,1)//姓氏
+      }
+      println(list2)
+  }
+  ```
+
+- 四大函数
+
+  ```
+  fun main(args: Array<String>) {
+      val list: ArrayList<String> = arrayListOf("林青霞", "范冰冰", "柳岩")
+      /*---------------------------- apply ----------------------------*/
+      /**
+       * 任意类型都有apply函数扩展
+       * apply参数是一个函数  T.() -> Unit 带接收者的函数字面值
+       * lambda表达式里this代表调用的对象
+       * 在lambda表达式里可以访问对象的方法
+       * apply函数返回值就是调用者本身
+       */
+      list?.apply {
+          add("张三")
+          add("张三")
+          add("李四")
+      }
+  
+      set {
+          name
+      }
+  
+  
+      /*---------------------------- let ----------------------------*/
+      /**
+       * 任意对象都有let扩展函数
+       * let函数参数也是一个函数
+       * 函数参数它的参数是调用者本身
+       * let函数返回值是函数参数的返回值 就是lambda表达式的返回值
+       */
+      list?.let {
+          it.add("张三")
+          it.add("张三")
+          it.add("张三")
+          "哈哈"
+          10
+      }
+      /*---------------------------- with ----------------------------*/
+      /**
+       * with是独立的函数  可以在任意地方调用
+       * with函数需要接收两个参数
+       * 第一个参数可以接收任意类型
+       * 第二个参数是函数参数,并且这个函数参数是带接收者的函数字面值 接收者就是第一个参数
+       * with函数返回值是第二个函数参数的返回值
+       * 相当于apply和let的结合
+       */
+      with(list) {
+          this.add("")
+          this.add("")
+          add("")
+          "哈哈"
+          10
+      }
+  
+      /*---------------------------- run ----------------------------*/
+      /**
+       * 任意类型都有run扩展函数
+       * run函数参数是待接收者的函数 接收者是调用者本身
+       * run函数返回值就是函数参数的返回值
+       */
+      list.run {
+          this.add("")
+          "哈哈"
+      }.length
+  }
+  
+  /**
+   * T.()->Unit
+   * lambda相当于定义在T里面的函数  访问对象里面的字段或者方法
+   * 调用的时候两种:1.Data().block()  2.block(Data())
+   */
+  fun set(block: Data.() -> Unit) {
+      block(Data())
+      Data().block()
+  }
+  
+  class Data {
+      var name = "张三"
+      fun haha() {
+  
+      }
+  
+      fun sayHello() {
+          this.haha()
+          haha()
+          name
+      }
+  }
+  
+  ```
+
+
